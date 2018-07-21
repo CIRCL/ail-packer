@@ -39,7 +39,7 @@ vm_description='AIL is a modular framework to analyse potential information leak
 vm_version='master'
 
 # Fetching latest AIL-framework LICENSE
-/usr/bin/wget -q -O /tmp/LICENSE-${PACKERNAME} https://raw.githubusercontent.com/CIRCL/AIL-framework/master/LICENSE
+/usr/bin/wget -q -O /tmp/LICENSE-${PACKER_NAME} https://raw.githubusercontent.com/CIRCL/AIL-framework/master/LICENSE
 
 # Place holder, this fn() should be used to anything signing related
 function signify()
