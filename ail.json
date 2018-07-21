@@ -1,18 +1,40 @@
 {
+    "_comment": "AIL VM Autogen packer build system",
     "variables": {
+        "boot_command_prefix": "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "preseed":"preseed.cfg",
+        "ssh_fullname": "ail",
         "ssh_name": "ail",
         "ssh_pass": "ail",
+        "iso_checksum": "73ae6579ef7c51d944a0be5c4c48f748bfd689df",
+        "iso_checksum_type": "sha1",
+        "iso_name": "ubuntu-18.04-server-amd64.iso",
+        "iso_path": "iso",
+        "iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04-server-amd64.iso",
+        "desktop": "false",
+        "update": "true",
+        "headless": "true",
+        "no_proxy": "{{env `no_proxy`}}",
+        "http_proxy": "{{env `http_proxy`}}",
+        "https_proxy": "{{env `https_proxy`}}",
         "hostname": "ail",
+        "vm_version": "2.4",
+        "vm_description": "AIL is a modular framework to analyse potential information leaks from unstructured data sources like pastes from Pastebin or similar services or unstructured data streams. AIL framework is flexible and can be extended to support other functionalities to mine or process sensitive information.",
         "vm_name": "AIL_demo",
-        "disk_size": "10000"
+        "disk_size": "10000",
+        "memory": "2048",
+        "cpus": "1"
     },
 
     "builders": [{
         "type": "virtualbox-iso",
-        "headless": "true",
+        "headless": "{{user `headless`}}",
         "guest_os_type": "Ubuntu_64",
         "format": "ova",
         "vm_name": "{{user `vm_name`}}",
+
+        "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+
 
         "export_opts":
           [
@@ -24,17 +46,26 @@
           ],
 
         "vboxmanage": [
-            ["modifyvm", "{{.Name}}", "--vram", "32"],
-            ["modifyvm", "{{.Name}}", "--memory", "2048"],
+            ["modifyvm", "{{.Name}}", "--memory", "{{user `memory`}}"],
             ["modifyvm", "{{.Name}}", "--natpf1", "ssh,tcp,,2222,0.0.0.0,22" ],
-            ["modifyvm", "{{.Name}}", "--natpf1", "http,tcp,,8888,,80" ]
+            ["modifyvm", "{{.Name}}", "--natpf1", "http,tcp,,8888,,80" ],
+            ["modifyvm", "{{.Name}}", "--audio", "none"],
+            ["modifyvm", "{{.Name}}", "--usb", "off"],
+            ["modifyvm", "{{.Name}}", "--vrde", "off"],
+            ["modifyvm", "{{.Name}}", "--cpus", "{{user `cpus`}}"],
+            ["modifyvm", "{{.Name}}", "--vram", "32"]
         ],
 
         "disk_size": "{{user `disk_size`}}",
 
-        "iso_url": "http://releases.ubuntu.com/17.10/ubuntu-17.10.1-server-amd64.iso",
-        "iso_checksum": "8ff73f1b622276758475c3bd5190b382774626de5a82c50930519381f6c3a3f8",
-        "iso_checksum_type": "sha256",
+        "hard_drive_interface": "sata",
+
+        "iso_checksum": "{{ user `iso_checksum` }}",
+        "iso_checksum_type": "{{ user `iso_checksum_type` }}",
+        "iso_urls": [
+            "{{ user `iso_path` }}/{{ user `iso_name` }}",
+            "{{ user `iso_url` }}"
+        ],
 
         "http_directory" : "preseeds",
         "http_port_min" : 9001,
@@ -47,32 +78,38 @@
 
         "shutdown_command": "echo {{user `ssh_pass`}} | sudo -S shutdown -P now",
 
-        "boot_command" : [
-            "<esc><esc><enter><wait>",
+        "boot_command": [
+            "{{ user `boot_command_prefix` }}",
             "/install/vmlinuz noapic ",
+            "initrd=/install/initrd.gz ",
             "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
             "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
-            "hostname={{user `hostname`}} ",
+            "hostname={{ user `hostname` }} ",
+            "grub-installer/bootdev=/dev/sda<wait> ",
             "fb=false debconf/frontend=noninteractive ",
             "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA ",
             "keyboard-configuration/variant=USA console-setup/ask_detect=false ",
-            "initrd=/install/initrd.gz -- <enter>"
+            "passwd/user-fullname={{ user `ssh_fullname` }} ",
+            "passwd/user-password={{ user `ssh_password` }} ",
+            "passwd/user-password-again={{ user `ssh_password` }} ",
+            "passwd/username={{ user `ssh_username` }} ",
+            "-- <enter>"
         ]
     },
     {
         "type": "vmware-iso",
-        "headless": "true",
+        "headless": "{{user `headless`}}",
         "guest_os_type": "ubuntu-64",
         "vm_name": "{{user `vm_name`}}",
 
-        "vmx_data": {
-            "memsize": "2048"
-        },
         "disk_size": "{{user `disk_size`}}",
 
-        "iso_url": "http://releases.ubuntu.com/17.10/ubuntu-17.10.1-server-amd64.iso",
-        "iso_checksum": "8ff73f1b622276758475c3bd5190b382774626de5a82c50930519381f6c3a3f8",
-        "iso_checksum_type": "sha256",
+        "iso_checksum": "{{ user `iso_checksum` }}",
+        "iso_checksum_type": "{{ user `iso_checksum_type` }}",
+        "iso_urls": [
+            "{{ user `iso_path` }}/{{ user `iso_name` }}",
+            "{{ user `iso_url` }}"
+        ],
 
         "http_directory" : "preseeds",
         "http_port_min" : 9001,
@@ -84,6 +121,10 @@
         "ssh_pty" : "true",
 
         "shutdown_command": "echo {{user `ssh_pass`}} | sudo -S shutdown -P now",
+
+        "vmx_data": {
+            "memsize": "{{user `memory`}}"
+        },
 
         "boot_command" : [
             "<esc><esc><enter><wait>",
@@ -102,6 +143,13 @@
 	],
 
     "provisioners": [{
+        "environment_vars": [
+            "DESKTOP={{user `desktop`}}",
+            "UPDATE={{user `update`}}",
+            "http_proxy={{user `http_proxy`}}",
+            "https_proxy={{user `https_proxy`}}",
+            "no_proxy={{user `no_proxy`}}"
+        ],
         "type": "shell",
         "execute_command": "echo '{{user `ssh_pass`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
         "inline": [
@@ -116,6 +164,8 @@
     }],
 
     "post-processors":[{
+        "keep_input_artifact": "false",
+        "keep_input_artifact": false,
         "type": "checksum",
         "checksum_types": ["sha1", "sha256", "sha384", "sha512"]
     }]
