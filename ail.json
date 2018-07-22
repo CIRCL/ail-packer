@@ -18,7 +18,7 @@
         "http_proxy": "{{env `http_proxy`}}",
         "https_proxy": "{{env `https_proxy`}}",
         "hostname": "ail",
-        "vm_version": "2.4",
+        "vm_version": "0.1",
         "vm_description": "AIL is a modular framework to analyse potential information leaks from unstructured data sources like pastes from Pastebin or similar services or unstructured data streams. AIL framework is flexible and can be extended to support other functionalities to mine or process sensitive information.",
         "vm_name": "AIL_demo",
         "disk_size": "10000",
