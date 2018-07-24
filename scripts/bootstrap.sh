@@ -61,30 +61,28 @@ echo "--- Installing AIL… ---"
 # sudo grub-mkconfig -o /boot/grub/grub.cfg
 
 echo "--- Updating packages list ---"
-sudo apt-get -qq update
+apt-get -qq update
 
 echo "--- Install base packages ---"
-sudo apt-get -y install curl net-tools gcc git make sudo vim zip python3-dev python3-pip python3-virtualenv virtualenvwrapper > /dev/null 2>&1
+apt-get -y install curl net-tools gcc git make sudo vim zip python3-dev python3-pip python3-virtualenv virtualenvwrapper > /dev/null 2>&1
 
 echo "--- Retrieving and setting up AIL ---"
 cd ~ail
 sudo -u ail git clone https://github.com/CIRCL/AIL-framework.git
 cd ${PATH_TO_AIL}
 ## BROKEN Issue with sudo in sudo
-sudo -u ail ./installing_deps.sh
-cd var/www/
-sudo -u ail ./update_thirdparty.sh
+sudo -H -u ail ./installing_deps.sh
 
 #sudo -u ail mkdir ~/.virtualenvs
 #sudo -u ail ln -s ${PATH_TO_AIL}/venv ~/.virtualenvs/ail
 #cd $PATH_TO_AIL
 #sudo cp ${PATH_TO_AIL}/etc/rc.local /etc/
-sudo usermod -a -G ail www-data
+usermod -a -G ail www-data
 #sudo chmod g+rw ${PATH_TO_AIL}
 #sudo -u ail git config core.filemode false
 
 echo "--- Install nginx ---"
-sudo apt-get -y install nginx
+apt-get -y install nginx
 
 echo "--- Copying config files ---"
 #sed -i "s/<CHANGE_ME>/ail/g" $PATH_TO_AIL/etc/nginx/sites-available/ail
