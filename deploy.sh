@@ -66,6 +66,7 @@ function removeAll()
   rm /tmp/LICENSE-${PACKER_NAME}
 }
 
+# TODO: Make it more graceful if files do not exist
 removeAll
 
 # Check if latest build is still up to date, if not, roll and deploy new
