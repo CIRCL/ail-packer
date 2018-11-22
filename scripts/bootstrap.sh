@@ -34,10 +34,6 @@
 
 AIL_BRANCH='master'
 
-# Grub config (reverts network interface names to ethX)
-GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"
-DEFAULT_GRUB="/etc/default/grub"
-
 # Ubuntu version
 UBUNTU_VERSION="$(lsb_release -r -s)"
 
@@ -52,26 +48,37 @@ echo "Your current shell is ${SHELL}"
 
 echo "--- Installing AIL… ---"
 
-# echo "--- Configuring GRUB ---"
-#
-# for key in GRUB_CMDLINE_LINUX
-# do
-#     sudo sed -i "s/^\($key\)=.*/\1=\"$(eval echo \${$key})\"/" $DEFAULT_GRUB
-# done
-# sudo grub-mkconfig -o /boot/grub/grub.cfg
-
 echo "--- Updating packages list ---"
 apt-get -qq update
 
 echo "--- Install base packages ---"
-apt-get -y install curl net-tools gcc git make sudo vim zip python3-dev python3-pip python3-virtualenv virtualenvwrapper > /dev/null 2>&1
+apt-get -y install curl net-tools gcc git make sudo vim zip python3-dev python3-pip python3-virtualenv virtualenvwrapper redis-tools tmux > /dev/null 2>&1
 
 echo "--- Retrieving and setting up AIL ---"
 cd ~ail
 sudo -u ail git clone https://github.com/CIRCL/AIL-framework.git
+sudo -u ail git clone https://github.com/CIRCL/pystemon.git
+sed -i -e 's/  queue: no/  queue: yes/g' pystemon/pystemon.yaml
+
 cd ${PATH_TO_AIL}
-## BROKEN Issue with sudo in sudo
 sudo -H -u ail ./installing_deps.sh
+./AILENV/bin/pip install pyyaml
+# Enabling pystemon intergration
+sed -i -e 's/pystemonpath = \/home\/pystemon\/pystemon\//pystemonpath = \/home\/ail\/pystemon\//g' bin/packages/config.cfg
+
+./crawler_hidden_services_install.sh -y
+
+echo "--- Installing rc.local ---"
+# With initd:
+if [ ! -e /etc/rc.local ]
+then
+    echo '#!/bin/sh -e' | sudo tee -a /etc/rc.local
+    echo 'exit 0' | sudo tee -a /etc/rc.local
+    chmod u+x /etc/rc.local
+fi
+
+sed -i -e '$i \sudo -u ail bash /home/ail/AIL-framework/bin/LAUNCH.sh -l \n' /etc/rc.local
+sed -i -e '$i \sudo -u ail bash /home/ail/AIL-framework/bin/LAUNCH.sh -f \n' /etc/rc.local
 
 #sudo -u ail mkdir ~/.virtualenvs
 #sudo -u ail ln -s ${PATH_TO_AIL}/venv ~/.virtualenvs/ail
@@ -81,8 +88,8 @@ usermod -a -G ail www-data
 #sudo chmod g+rw ${PATH_TO_AIL}
 #sudo -u ail git config core.filemode false
 
-echo "--- Install nginx ---"
-apt-get -y install nginx
+echo "--- Install nginx --- (TODO)"
+##apt-get -y install nginx
 
 echo "--- Copying config files ---"
 #sed -i "s/<CHANGE_ME>/ail/g" $PATH_TO_AIL/etc/nginx/sites-available/ail

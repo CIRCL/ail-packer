@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
+# Timing creation
+TIME_START=$(date +%s)
+
 # Latest version of AIL, tags disabled as not maintained.
 ##VER=$(curl -s https://api.github.com/repos/CIRCL/AIL-framework/tags  |jq -r '.[0] | .name')
 VER='master'
 # Latest commit hash of AIL
 LATEST_COMMIT=$(curl -s https://api.github.com/repos/CIRCL/AIL-framework/commits  |jq -r '.[0] | .sha')
-# Update time-stamp and make sure file exists
-touch /tmp/ail-latest.sha
 # SHAsums to be computed
 SHA_SUMS="1 256 384 512"
 
@@ -14,9 +15,12 @@ PACKER_NAME="ail"
 PACKER_VM="AIL"
 NAME="ail-packer"
 
+# Update time-stamp and make sure file exists
+touch /tmp/${PACKER_NAME}-latest.sha
+
 # Configure your user and remote server
 REMOTE=1
-REL_USER="ail-release"
+REL_USER="${PACKER_NAME}-release"
 REL_SERVER="cpab"
 
 # GPG Sign
@@ -70,47 +74,49 @@ function removeAll()
 removeAll
 
 # Check if latest build is still up to date, if not, roll and deploy new
-if [ "${LATEST_COMMIT}" != "$(cat /tmp/ail-latest.sha)" ]; then
+if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
 
-  echo "Current AIL version is: ${VER}@${LATEST_COMMIT}"
+  echo "Current ${PACKER_VM} version is: ${VER}@${LATEST_COMMIT}"
 
   # Search and replace for vm_name and make sure we can easily identify the generated VMs
-  cat ail.json| sed "s|\"vm_name\": \"AIL_demo\",|\"vm_name\": \"AIL${VER}@${LATEST_COMMIT}\",|" > ail-deploy.json
+  cat ${PACKER_NAME}.json| sed "s|\"vm_name\": \"${PACKER_VM}_demo\",|\"vm_name\": \"${PACKER_VM}_${VER}@${LATEST_COMMIT}\",|" > ${PACKER_NAME}-deploy.json
 
   # Build virtualbox VM set
-  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" -only=virtualbox-iso ail-deploy.json
+  PACKER_LOG_PATH="${PWD}/packerlog-vbox.txt"
+  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" --on-error=ask -only=virtualbox-iso ail-deploy.json
 
   # Build vmware VM set
-  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" -only=vmware-iso ail-deploy.json
+  PACKER_LOG_PATH="${PWD}/packerlog-vmware.txt"
+  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" --on-error=ask -only=vmware-iso ail-deploy.json
 
   # ZIPup all the vmware stuff
-  zip -r AIL${VER}@${LATEST_COMMIT}-vmware.zip  packer_vmware-iso_vmware-iso_sha1.checksum packer_vmware-iso_vmware-iso_sha512.checksum output-vmware-iso
+  zip -r ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip  packer_vmware-iso_vmware-iso_sha1.checksum packer_vmware-iso_vmware-iso_sha512.checksum output-vmware-iso
 
   # Create a hashfile for the zip
   for SUMsize in `echo ${SHA_SUMS}`; do
-    shasum -a ${SUMsize} *.zip > AIL${VER}@${LATEST_COMMIT}-vmware.zip.sha${SUMsize}
+    shasum -a ${SUMsize} *.zip > ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha${SUMsize}
   done
 
 
   # Current file list of everything to gpg sign and transfer
-  FILE_LIST="AIL${VER}@${LATEST_COMMIT}-vmware.zip output-virtualbox-iso/AIL${VER}@${LATEST_COMMIT}.ova packer_virtualbox-iso_virtualbox-iso_sha1.checksum packer_virtualbox-iso_virtualbox-iso_sha256.checksum packer_virtualbox-iso_virtualbox-iso_sha384.checksum packer_virtualbox-iso_virtualbox-iso_sha512.checksum AIL${VER}@${LATEST_COMMIT}-vmware.zip.sha1 AIL${VER}@${LATEST_COMMIT}-vmware.zip.sha256 AIL${VER}@${LATEST_COMMIT}-vmware.zip.sha384 AIL${VER}@${LATEST_COMMIT}-vmware.zip.sha512"
+  FILE_LIST="${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip output-virtualbox-iso/${PACKER_VM}_${VER}@${LATEST_COMMIT}.ova packer_virtualbox-iso_virtualbox-iso_sha1.checksum packer_virtualbox-iso_virtualbox-iso_sha256.checksum packer_virtualbox-iso_virtualbox-iso_sha384.checksum packer_virtualbox-iso_virtualbox-iso_sha512.checksum ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha1 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha256 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha384 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha512"
 
   # Create the latest AIL export directory
-  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mkdir -p export/AIL${VER}@${LATEST_COMMIT}
+  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mkdir -p export/${PACKER_VM}_${VER}@${LATEST_COMMIT}
 
   # Sign and transfer files
   for FILE in ${FILE_LIST}; do
     gpg --armor --output ${FILE}.asc --detach-sig ${FILE}
-    rsync -azv --progress -e "ssh -i $HOME/.ssh/id_rsa_ail" ${FILE} ${REL_USER}@${REL_SERVER}:export/AIL${VER}@${LATEST_COMMIT}
-    rsync -azv --progress -e "ssh -i $HOME/.ssh/id_rsa_ail" ${FILE}.asc ${REL_USER}@${REL_SERVER}:export/AIL${VER}@${LATEST_COMMIT}
+    rsync -azv --progress -e "ssh -i $HOME/.ssh/id_rsa_ail" ${FILE} ${REL_USER}@${REL_SERVER}:export/${PACKER_VM}_${VER}@${LATEST_COMMIT}
+    rsync -azv --progress -e "ssh -i $HOME/.ssh/id_rsa_ail" ${FILE}.asc ${REL_USER}@${REL_SERVER}:export/${PACKER_VM}_${VER}@${LATEST_COMMIT}
   done
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} rm export/latest
-  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} ln -s AIL${VER}@${LATEST_COMMIT} export/latest
+  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT} export/latest
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} chmod -R +r export
 
   ##ssh ${REL_USER}@${REL_SERVER} cd export ; tree -T "AIL VM Images" -H https://www.circl.lu/ail-images/ -o index.html
 
-  echo ${LATEST_COMMIT} > /tmp/ail-latest.sha
+  echo ${LATEST_COMMIT} > /tmp/${PACKER_NAME}-latest.sha
 else
   echo "Current AIL-framework version ${VER}@${LATEST_COMMIT} is up to date."
 fi

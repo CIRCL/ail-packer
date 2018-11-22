@@ -2,28 +2,28 @@
     "_comment": "AIL VM Autogen packer build system",
     "variables": {
         "boot_command_prefix": "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "cpus": "1",
+        "desktop": "false",
+        "disk_size": "10000",
+        "headless": "true",
+        "hostname": "ail",
+        "http_proxy": "{{env `http_proxy`}}",
+        "https_proxy": "{{env `https_proxy`}}",
+        "iso_checksum": "87bedd68607f059ca973f86346bbdf1caa6e1077",
+        "iso_checksum_type": "sha1",
+        "iso_name": "ubuntu-18.04.1-server-amd64.iso",
+        "iso_path": "iso",
+        "iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.1-server-amd64.iso",
+        "memory": "2048",
+        "no_proxy": "{{env `no_proxy`}}",
         "preseed":"preseed.cfg",
         "ssh_fullname": "ail",
         "ssh_name": "ail",
         "ssh_pass": "ail",
-        "iso_checksum": "73ae6579ef7c51d944a0be5c4c48f748bfd689df",
-        "iso_checksum_type": "sha1",
-        "iso_name": "ubuntu-18.04-server-amd64.iso",
-        "iso_path": "iso",
-        "iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04-server-amd64.iso",
-        "desktop": "false",
         "update": "true",
-        "headless": "true",
-        "no_proxy": "{{env `no_proxy`}}",
-        "http_proxy": "{{env `http_proxy`}}",
-        "https_proxy": "{{env `https_proxy`}}",
-        "hostname": "ail",
         "vm_version": "0.1",
         "vm_description": "AIL is a modular framework to analyse potential information leaks from unstructured data sources like pastes from Pastebin or similar services or unstructured data streams. AIL framework is flexible and can be extended to support other functionalities to mine or process sensitive information.",
-        "vm_name": "AIL_demo",
-        "disk_size": "10000",
-        "memory": "2048",
-        "cpus": "1"
+        "vm_name": "AIL_demo"
     },
 
     "builders": [{
@@ -48,7 +48,7 @@
         "vboxmanage": [
             ["modifyvm", "{{.Name}}", "--memory", "{{user `memory`}}"],
             ["modifyvm", "{{.Name}}", "--natpf1", "ssh,tcp,,2222,0.0.0.0,22" ],
-            ["modifyvm", "{{.Name}}", "--natpf1", "http,tcp,,8888,,80" ],
+            ["modifyvm", "{{.Name}}", "--natpf1", "http,tcp,,7000,,7000" ],
             ["modifyvm", "{{.Name}}", "--audio", "none"],
             ["modifyvm", "{{.Name}}", "--usb", "off"],
             ["modifyvm", "{{.Name}}", "--vrde", "off"],
@@ -159,9 +159,27 @@
     {
         "type": "shell",
         "execute_command" : "echo '{{user `ssh_pass`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+        "script": "scripts/interfaces.sh"
+    },
+    {
+        "type": "shell",
+        "execute_command" : "echo '{{user `ssh_pass`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
         "script": "scripts/bootstrap.sh",
         "pause_before": "10s"
-    }],
+    },
+    {
+        "type": "file",
+        "source" : "conffiles/issue",
+        "destination": "/tmp/issue"
+    },
+    {
+        "type": "shell",
+        "execute_command" : "echo '{{user `ssh_pass`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+        "script": "scripts/clean.sh",
+        "expect_disconnect": "true",
+        "pause_before": "30s"
+    }
+    ],
 
     "post-processors":[{
         "keep_input_artifact": "false",
