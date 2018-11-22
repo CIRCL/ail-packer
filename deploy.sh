@@ -42,9 +42,6 @@ mkdir -p ${PWD}/log
 vm_description='AIL is a modular framework to analyse potential information leaks from unstructured data sources like pastes from Pastebin or similar services or unstructured data streams. AIL framework is flexible and can be extended to support other functionalities to mine or process sensitive information.'
 vm_version='master'
 
-# Fetching latest AIL-framework LICENSE
-/usr/bin/wget -q -O /tmp/LICENSE-${PACKER_NAME} https://raw.githubusercontent.com/CIRCL/AIL-framework/master/LICENSE
-
 # Place holder, this fn() should be used to anything signing related
 function signify()
 {
@@ -66,12 +63,15 @@ function removeAll()
   rm packer_virtualbox-iso_virtualbox-iso_sha256.checksum.asc
   rm packer_virtualbox-iso_virtualbox-iso_sha384.checksum.asc
   rm packer_virtualbox-iso_virtualbox-iso_sha512.checksum.asc
-  rm AIL${VER}@${LATEST_COMMIT}-vmware.zip.asc
+  rm AIL_${VER}@${LATEST_COMMIT}-vmware.zip.asc
   rm /tmp/LICENSE-${PACKER_NAME}
 }
 
 # TODO: Make it more graceful if files do not exist
 removeAll
+
+# Fetching latest AIL-framework LICENSE
+/usr/bin/wget -q -O /tmp/LICENSE-${PACKER_NAME} https://raw.githubusercontent.com/CIRCL/AIL-framework/master/LICENSE
 
 # Check if latest build is still up to date, if not, roll and deploy new
 if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
@@ -79,7 +79,7 @@ if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
   echo "Current ${PACKER_VM} version is: ${VER}@${LATEST_COMMIT}"
 
   # Search and replace for vm_name and make sure we can easily identify the generated VMs
-  cat ${PACKER_NAME}.json| sed "s|\"vm_name\": \"${PACKER_VM}_demo\",|\"vm_name\": \"${PACKER_VM}_${VER}@${LATEST_COMMIT}\",|" > ${PACKER_NAME}-deploy.json
+  cat ${PACKER_NAME}.json| sed "s|\"vm_name\": \"${PACKER_VM}_demo\"|\"vm_name\": \"${PACKER_VM}_${VER}@${LATEST_COMMIT}\"|" > ${PACKER_NAME}-deploy.json
 
   # Build virtualbox VM set
   PACKER_LOG_PATH="${PWD}/packerlog-vbox.txt"
@@ -101,9 +101,9 @@ if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
   # Current file list of everything to gpg sign and transfer
   FILE_LIST="${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip output-virtualbox-iso/${PACKER_VM}_${VER}@${LATEST_COMMIT}.ova packer_virtualbox-iso_virtualbox-iso_sha1.checksum packer_virtualbox-iso_virtualbox-iso_sha256.checksum packer_virtualbox-iso_virtualbox-iso_sha384.checksum packer_virtualbox-iso_virtualbox-iso_sha512.checksum ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha1 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha256 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha384 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha512"
 
-  # Create the latest MISP export directory
-  ssh ${REL_USER}@${REL_SERVER} mkdir -p export/MISP_${VER}@${LATEST_COMMIT}
-  ssh ${REL_USER}@${REL_SERVER} mkdir -p export/MISP_${VER}@${LATEST_COMMIT}/checksums
+  # Create the latest AIL export directory
+  ssh ${REL_USER}@${REL_SERVER} mkdir -p export/AIL_${VER}@${LATEST_COMMIT}
+  ssh ${REL_USER}@${REL_SERVER} mkdir -p export/AIL_${VER}@${LATEST_COMMIT}/checksums
 
   # Create the latest AIL export directory
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mkdir -p export/${PACKER_VM}_${VER}@${LATEST_COMMIT}
@@ -117,8 +117,8 @@ if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} rm export/latest
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT} export/latest
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} chmod -R +r export
-  ssh ${REL_USER}@${REL_SERVER} mv export/MISP_${VER}@${LATEST_COMMIT}/*.checksum* export/MISP_${VER}@${LATEST_COMMIT}/checksums
-  ssh ${REL_USER}@${REL_SERVER} mv export/MISP_${VER}@${LATEST_COMMIT}/*-vmware.zip.sha* export/MISP_${VER}@${LATEST_COMMIT}/checksums
+  ssh ${REL_USER}@${REL_SERVER} mv export/AIL_${VER}@${LATEST_COMMIT}/*.checksum* export/AIL_${VER}@${LATEST_COMMIT}/checksums
+  ssh ${REL_USER}@${REL_SERVER} mv export/AIL_${VER}@${LATEST_COMMIT}/*-vmware.zip.sha* export/AIL_${VER}@${LATEST_COMMIT}/checksums
 
   ##ssh ${REL_USER}@${REL_SERVER} cd export ; tree -T "AIL VM Images" -H https://www.circl.lu/ail-images/ -o index.html
 
