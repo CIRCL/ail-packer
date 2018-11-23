@@ -83,11 +83,13 @@ if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
 
   # Build virtualbox VM set
   PACKER_LOG_PATH="${PWD}/packerlog-vbox.txt"
-  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" --on-error=ask -only=virtualbox-iso ail-deploy.json
+  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" --on-error=ask -only=virtualbox-iso ail-deploy.json &
+
+  sleep 300
 
   # Build vmware VM set
   PACKER_LOG_PATH="${PWD}/packerlog-vmware.txt"
-  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" --on-error=ask -only=vmware-iso ail-deploy.json
+  /usr/local/bin/packer build -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" --on-error=abort -only=vmware-iso ail-deploy.json
 
   # ZIPup all the vmware stuff
   zip -r ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip  packer_vmware-iso_vmware-iso_sha1.checksum packer_vmware-iso_vmware-iso_sha512.checksum output-vmware-iso
@@ -102,8 +104,8 @@ if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
   FILE_LIST="${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip output-virtualbox-iso/${PACKER_VM}_${VER}@${LATEST_COMMIT}.ova packer_virtualbox-iso_virtualbox-iso_sha1.checksum packer_virtualbox-iso_virtualbox-iso_sha256.checksum packer_virtualbox-iso_virtualbox-iso_sha384.checksum packer_virtualbox-iso_virtualbox-iso_sha512.checksum ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha1 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha256 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha384 ${PACKER_VM}_${VER}@${LATEST_COMMIT}-vmware.zip.sha512"
 
   # Create the latest AIL export directory
-  ssh ${REL_USER}@${REL_SERVER} mkdir -p export/AIL_${VER}@${LATEST_COMMIT}
-  ssh ${REL_USER}@${REL_SERVER} mkdir -p export/AIL_${VER}@${LATEST_COMMIT}/checksums
+  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mkdir -p export/AIL_${VER}@${LATEST_COMMIT}
+  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mkdir -p export/AIL_${VER}@${LATEST_COMMIT}/checksums
 
   # Create the latest AIL export directory
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mkdir -p export/${PACKER_VM}_${VER}@${LATEST_COMMIT}
@@ -117,8 +119,8 @@ if [ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]; then
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} rm export/latest
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT} export/latest
   ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} chmod -R +r export
-  ssh ${REL_USER}@${REL_SERVER} mv export/AIL_${VER}@${LATEST_COMMIT}/*.checksum* export/AIL_${VER}@${LATEST_COMMIT}/checksums
-  ssh ${REL_USER}@${REL_SERVER} mv export/AIL_${VER}@${LATEST_COMMIT}/*-vmware.zip.sha* export/AIL_${VER}@${LATEST_COMMIT}/checksums
+  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mv export/AIL_${VER}@${LATEST_COMMIT}/*.checksum* export/AIL_${VER}@${LATEST_COMMIT}/checksums
+  ssh -i $HOME/.ssh/id_rsa_ail ${REL_USER}@${REL_SERVER} mv export/AIL_${VER}@${LATEST_COMMIT}/*-vmware.zip.sha* export/AIL_${VER}@${LATEST_COMMIT}/checksums
 
   ##ssh ${REL_USER}@${REL_SERVER} cd export ; tree -T "AIL VM Images" -H https://www.circl.lu/ail-images/ -o index.html
 

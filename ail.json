@@ -177,7 +177,7 @@
         "execute_command" : "echo '{{user `ssh_pass`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
         "script": "scripts/clean.sh",
         "expect_disconnect": "true",
-        "pause_before": "30s"
+        "pause_before": "60s"
     }
     ],
 
