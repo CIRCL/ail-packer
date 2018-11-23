@@ -68,7 +68,7 @@ function removeAll()
 }
 
 # TODO: Make it more graceful if files do not exist
-removeAll
+removeAll 2> /dev/null
 
 # Fetching latest AIL-framework LICENSE
 /usr/bin/wget -q -O /tmp/LICENSE-${PACKER_NAME} https://raw.githubusercontent.com/CIRCL/AIL-framework/master/LICENSE
