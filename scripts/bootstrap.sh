@@ -59,6 +59,7 @@ cd ~ail
 sudo -u ail git clone https://github.com/CIRCL/AIL-framework.git
 sudo -u ail git clone https://github.com/CIRCL/pystemon.git
 sed -i -e 's/  queue: no/  queue: yes/g' pystemon/pystemon.yaml
+sed -i -e 's/  save-all: no/  save-all: yes/g' pystemon/pystemon.yaml
 
 cd ${PATH_TO_AIL}
 sudo -H -u ail ./installing_deps.sh
