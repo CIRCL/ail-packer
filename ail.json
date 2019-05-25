@@ -4,18 +4,19 @@
         "boot_command_prefix": "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
         "cpus": "1",
         "desktop": "false",
-        "disk_size": "10000",
+        "disk_size": "25000",
         "headless": "true",
         "hostname": "ail",
         "http_proxy": "{{env `http_proxy`}}",
         "https_proxy": "{{env `https_proxy`}}",
-        "iso_checksum": "87bedd68607f059ca973f86346bbdf1caa6e1077",
+        "iso_checksum": "57c3a25f2c5fd61596ce39afbff44dd49b0089a2",
         "iso_checksum_type": "sha1",
-        "iso_name": "ubuntu-18.04.1-server-amd64.iso",
+        "iso_name": "ubuntu-18.04.2-server-amd64.iso",
         "iso_path": "iso",
-        "iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.1-server-amd64.iso",
+        "iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.2-server-amd64.iso",
         "memory": "2048",
         "no_proxy": "{{env `no_proxy`}}",
+        "ovftool_path": "ovftool",
         "preseed":"preseed.cfg",
         "ssh_fullname": "ail",
         "ssh_name": "ail",
@@ -75,6 +76,8 @@
         "ssh_password": "{{user `ssh_pass`}}",
         "ssh_wait_timeout": "20m",
         "ssh_pty" : "true",
+        "type": "virtualbox-iso",
+        "vm_name": "{{user `vm_name`}}",
 
         "shutdown_command": "echo {{user `ssh_pass`}} | sudo -S shutdown -P now",
 
@@ -93,6 +96,7 @@
             "passwd/user-password={{ user `ssh_password` }} ",
             "passwd/user-password-again={{ user `ssh_password` }} ",
             "passwd/username={{ user `ssh_username` }} ",
+            "debconf/frontend=noninteractive ",
             "-- <enter>"
         ]
     },
@@ -103,7 +107,11 @@
         "vm_name": "{{user `vm_name`}}",
 
         "disk_size": "{{user `disk_size`}}",
-
+        "guest_os_type": "ubuntu-64",
+        "headless": "{{user `headless`}}",
+        "http_directory" : "preseeds",
+        "http_port_min" : 9001,
+        "http_port_max" : 9011,
         "iso_checksum": "{{ user `iso_checksum` }}",
         "iso_checksum_type": "{{ user `iso_checksum_type` }}",
         "iso_urls": [
@@ -136,9 +144,7 @@
             "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA ",
             "keyboard-configuration/variant=USA console-setup/ask_detect=false ",
             "initrd=/install/initrd.gz -- <enter>"
-        ],
-
-        "skip_compaction": false
+        ]
     }
 	],
 
@@ -177,14 +183,8 @@
         "execute_command" : "echo '{{user `ssh_pass`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
         "script": "scripts/clean.sh",
         "expect_disconnect": "true",
-        "pause_before": "60s"
+        "pause_before": "10s",
+        "pause_after": "30s"
     }
-    ],
-
-    "post-processors":[{
-        "keep_input_artifact": "false",
-        "keep_input_artifact": false,
-        "type": "checksum",
-        "checksum_types": ["sha1", "sha256", "sha384", "sha512"]
-    }]
+    ]
 }
