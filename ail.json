@@ -14,7 +14,7 @@
         "iso_name": "ubuntu-18.04.2-server-amd64.iso",
         "iso_path": "iso",
         "iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.2-server-amd64.iso",
-        "memory": "2048",
+        "memory": "4096",
         "no_proxy": "{{env `no_proxy`}}",
         "ovftool_path": "ovftool",
         "preseed":"preseed.cfg",

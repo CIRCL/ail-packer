@@ -52,7 +52,7 @@ echo "--- Updating packages list ---"
 apt-get -qq update
 
 echo "--- Install base packages ---"
-apt-get -y install curl net-tools gcc git make sudo vim zip python3-dev python3-pip python3-virtualenv virtualenvwrapper redis-tools tmux > /dev/null 2>&1
+DEBIAN_FRONTEND=noninteractive apt-get -y install curl net-tools gcc git make sudo vim zip python3-dev python3-pip python3-virtualenv virtualenvwrapper redis-tools tmux > /dev/null 2>&1
 
 echo "--- Retrieving and setting up AIL ---"
 cd ~ail

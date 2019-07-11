@@ -189,10 +189,10 @@ removeAll 2> /dev/null
 # Make sure the installer we run is the one that is currently on GitHub
 if [[ -e ${PATH_TO_INSTALLER} ]]; then
   echo "Checking checksums"
-  checkInstaller
+  #checkInstaller
 else
   /usr/bin/wget -q -O ${PATH_TO_INSTALLER} ${URL_TO_INSTALLER}
-  checkInstaller
+  #checkInstaller
 fi
 
 # Check if latest build is still up to date, if not, roll and deploy new
@@ -200,7 +200,7 @@ if [[ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]]; then
   echo "Current ${PACKER_VM} version is: ${VER}@${LATEST_COMMIT_SHORT}"
 
   # Search and replace for vm_name and make sure we can easily identify the generated VMs
-  cat ${PACKER_NAME}.json| sed "s|\"vm_name\": \"${PACKER_VM}_demo\",|\"vm_name\": \"${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}\",|" > ${PACKER_NAME}-deploy.json
+  cat ${PACKER_NAME}.json| sed "s|\"vm_name\": \"${PACKER_VM}_demo\"|\"vm_name\": \"${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}\"|" > ${PACKER_NAME}-deploy.json
 
   # Build virtualbox VM set
   PACKER_LOG_PATH="${PWD}/packerlog-vbox.txt"
