@@ -204,11 +204,11 @@ if [[ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]]; then
 
   # Build virtualbox VM set
   PACKER_LOG_PATH="${PWD}/packerlog-vbox.txt"
-  ($PACKER_RUN build --on-error=cleanup -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" -only=virtualbox-iso ${PACKER_NAME}-deploy.json ; echo $? > /tmp/${PACKER_NAME}-vbox.done) &
+  ($PACKER_RUN build --on-error=cleanup -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" -only=virtualbox-iso ${PACKER_NAME}-deploy.json ; echo $? > /tmp/${PACKER_NAME}-vbox.done)
 
   # Build vmware VM set
   PACKER_LOG_PATH="${PWD}/packerlog-vmware.txt"
-  ($PACKER_RUN build --on-error=cleanup -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" -only=vmware-iso ${PACKER_NAME}-deploy.json ; echo $? > /tmp/${PACKER_NAME}-vmware.done) &
+  ($PACKER_RUN build --on-error=cleanup -var "vm_description=${vm_description}" -var "vm_version=${vm_version}" -only=vmware-iso ${PACKER_NAME}-deploy.json ; echo $? > /tmp/${PACKER_NAME}-vmware.done)
 
   # The below waits for the above 2 parallel packer builds to finish
   while [[ ! -f /tmp/${PACKER_NAME}-vmware.done ]]; do :; done
@@ -254,21 +254,29 @@ if [[ "${LATEST_COMMIT}" != "$(cat /tmp/${PACKER_NAME}-latest.sha)" ]]; then
 
       if [[ "${REMOTE}" == "1" ]]; then
         rsync -azvq --progress ${FILE} ${REL_USER}@${REL_SERVER}:export/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}
-        ssh ${REL_USER}@${REL_SERVER} "rm export/latest ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT} export/latest ;\
-                                       rm export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv.asc ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv.asc export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv.asc"
+        ssh ${REL_USER}@${REL_SERVER} "rm export/latest ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT} export/latest"
+        # Copy .asc files if GPG enabled
+        if [[ "$GPG_ENABLED" == "1" ]]; then
+          ssh ${REL_USER}@${REL_SERVER} "rm export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv.asc ; \
+            ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv.asc export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv.asc"
+        fi
       fi
     done
 
     if [[ "${REMOTE}" == "1" ]]; then
       ssh ${REL_USER}@${REL_SERVER} "chmod -R +r export ;\
          mv export/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv     export/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums ;\
-         mv export/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv.asc export/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums ;\
          rm export/${PACKER_VM}_${VER}@latest.ova              ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}.ova export/${PACKER_VM}_${VER}@latest.ova ;\
-         rm export/${PACKER_VM}_${VER}@latest.ova.asc          ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}.ova.asc export/${PACKER_VM}_${VER}@latest.ova.asc ;\
          rm export/${PACKER_VM}_${VER}@latest-VMware.zip       ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-VMware.zip export/${PACKER_VM}_${VER}@latest-VMware.zip ;\
+         rm export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv     ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv"
+        # Copy .asc files if GPG enabled
+        if [[ "$GPG_ENABLED" == "1" ]]; then
+          ssh ${REL_USER}@${REL_SERVER} "mv export/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv.asc export/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums ;\
+         rm export/${PACKER_VM}_${VER}@latest.ova.asc          ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}.ova.asc export/${PACKER_VM}_${VER}@latest.ova.asc ;\
          rm export/${PACKER_VM}_${VER}@latest-VMware.zip.asc   ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-VMware.zip.asc export/${PACKER_VM}_${VER}@latest-VMware.zip.asc ;\
-         rm export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv     ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv ;\
          rm export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv.asc ; ln -s ${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}/checksums/${PACKER_VM}_${VER}@${LATEST_COMMIT_SHORT}-CHECKSUM.sfv.asc export/${PACKER_VM}_${VER}@latest-CHECKSUM.sfv.asc"
+              
+        fi
     fi
 
   else
